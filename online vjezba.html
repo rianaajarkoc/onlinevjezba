@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jednostavna Igrica - Skakanje</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: #d0f0ff; /* PROMJENA BOJE PODA (svijetlo plava) */
+            display: block;
+            margin: 20px auto;
+        }
+
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Preskoči prepreke!</h2>
+<canvas id="igra" width="600" height="200"></canvas>
+<br>
+<button id="startBtn" type="button">Pokreni igru</button>
+
+<script>
+    var platno = document.getElementById("igra");
+    var kontekst = platno.getContext("2d");
+    var startBtn = document.getElementById("startBtn");
+
+    // IGRAČ
+    var igrac = {
+        x: 100,
+        y: 150,
+        sirina: 30,
+        visina: 30,
+        brzinaSkoka: 0,
+        uSkoku: false
+    };
+
+    // PREPREKA (META)
+    var prepreka = {
+        x: 400,           // PROMJENA: META JE BLIŽA NA POČETKU
+        y: 160,           // malo niže (prilagođeno većoj veličini)
+        sirina: 40,       // PROMJENA: VEĆA META
+        visina: 40,       // PROMJENA: VEĆA META
+        brzina: 4         // PROMJENA: UBRZANA LOPTICA
+    };
+
+    // STANJE IGRE
+    var igraUToku = false;
+    var score = 0;
+    var proslaPrepreka = false;
+    var animacija;
+
+    startBtn.addEventListener("click", function() {
+        this.blur();
+        pokreniIgru();
+    });
+
+    // Pokretanje igre
+    function pokreniIgru() {
+        igrac.y = 150;
+        igrac.brzinaSkoka = 0;
+        igrac.uSkoku = false;
+        prepreka.x = 400 + Math.random() * 150; // bliže i s manjom nasumičnošću
+        score = 0;
+        proslaPrepreka = false;
+        igraUToku = true;
+
+        kontekst.clearRect(0, 0, platno.width, platno.height);
+        cancelAnimationFrame(animacija);
+        petlja();
+    }
+
+    // Skok na razmaknicu
+    document.addEventListener("keydown", function(event) {
+        if (event.code === "Space") {
+            event.preventDefault();
+            if (igraUToku && igrac.uSkoku === false) {
+                igrac.brzinaSkoka = -11;
+                igrac.uSkoku = true;
+            }
+        }
+    });
+
+    function petlja() {
+        if (!igraUToku) return;
+
+        kontekst.clearRect(0, 0, platno.width, platno.height);
+
+        // IGRAC
+        kontekst.fillStyle = "green"; // PROMJENA BOJE KOCKE (igrača)
+        kontekst.fillRect(igrac.x, igrac.y, igrac.sirina, igrac.visina);
+
+        // PREPREKA (META)
+        kontekst.fillStyle = "orange"; // drugačija boja mete
+        kontekst.fillRect(prepreka.x, prepreka.y, prepreka.sirina, prepreka.visina);
+
+        // SCORE
+        kontekst.fillStyle = "black";
+        kontekst.font = "18px Arial";
+        kontekst.fillText("Score: " + score, 500, 30);
+
+        // Pomjeri prepreku ulijevo
+        prepreka.x -= prepreka.brzina;
+
+        // Ako prepreka prođe igrača
+        if (prepreka.x + prepreka.sirina < igrac.x && !proslaPrepreka) {
+            score++;
+            proslaPrepreka = true;
+        }
+
+        // Ako prepreka izađe van ekrana
+        if (prepreka.x + prepreka.sirina < 0) {
+            prepreka.x = 600 + Math.random() * 200;
+            proslaPrepreka = false;
+        }
+
+        // GRAVITACIJA
+        igrac.y += igrac.brzinaSkoka;
+        igrac.brzinaSkoka += 0.5;
+
+        // Ako dotakne tlo
+        if (igrac.y > 150) {
+            igrac.y = 150;
+            igrac.brzinaSkoka = 0;
+            igrac.uSkoku = false;
+        }
+
+        // PROVJERA SUDARA
+        if (
+            igrac.x < prepreka.x + prepreka.sirina &&
+            igrac.x + igrac.sirina > prepreka.x &&
+            igrac.y + igrac.visina > prepreka.y
+        ) {
+            igraUToku = false;
+            kontekst.fillStyle = "black";
+            kontekst.font = "20px Arial";
+            kontekst.fillText("Kraj igre! Rezultat: " + score, 200, 100);
+            kontekst.fillText("Klikni 'Pokreni igru' za novi pokušaj.", 130, 130);
+            cancelAnimationFrame(animacija);
+            return;
+        }
+
+        animacija = requestAnimationFrame(petlja);
+    }
+
+    function nacrtajStartEkran() {
+        kontekst.clearRect(0, 0, platno.width, platno.height);
+        kontekst.fillStyle = "black";
+        kontekst.font = "20px Arial";
+        kontekst.fillText("Klikni 'Pokreni igru' da započneš", 160, 90);
+        kontekst.fillText("Pritisni SPACE da skočiš", 200, 120);
+    }
+
+    nacrtajStartEkran();
+</script>
+
+</body>
+</html>
